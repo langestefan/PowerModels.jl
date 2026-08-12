@@ -100,6 +100,45 @@ build_pf_system
 PowerFlowSystem
 PowerFlowSolution
 ```
+### SciML Solvers
+
+As an alternative to the built-in `NativeNewton` solver, the nonlinear solvers
+of the [SciML](https://docs.sciml.ai/NonlinearSolve/stable/) ecosystem can be
+used through the `solver` keyword argument.  This support is provided by a
+package extension that is loaded automatically when a package providing
+SciMLBase is installed, such as NonlinearSolve.jl.  PowerModels itself does
+not depend on these packages.
+
+```julia
+using PowerModels, NonlinearSolve
+
+compute_ac_pf(data, solver = NewtonRaphson())
+compute_ac_pf(data, solver = TrustRegion())
+```
+
+The solver receives the analytic sparse Jacobian, so no automatic
+differentiation or sparsity detection is performed.
+
+For many repeated solves of the same network, such as a monte carlo study
+over the power injections, the extension also provides a `NonlinearProblem`
+constructor for `PowerFlowSystem`.  This makes the SciML solver cache
+interface available, which reuses the solver's internal allocations and
+factorizations across solves:
+
+```julia
+prob = NonlinearProblem(build_pf_system(instantiate_pf_data(data)))
+cache = init(prob, NewtonRaphson())
+
+for injections in samples
+    reinit!(cache, cache.u; p = injections)
+    sol = PowerFlowSolution(solve!(cache))
+end
+```
+
+Passing `cache.u` to `reinit!` warm starts each sample from the previous
+solution.  The `PowerFlowSolution` constructor converts the solver's SciML
+solution back into the PowerModels type.
+
 `compute_ac_pf` will typically provide an identical result to `solve_ac_pf`.
 However, the existence of solution degeneracy around generator injection
 assignments and multiple power flow solutions can yield different results.
