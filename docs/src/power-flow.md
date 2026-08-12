@@ -143,6 +143,47 @@ end
 compute_ac_pf(data, solver = MySolver())
 ```
 
+### SciML Solvers
+
+As an alternative to the built-in `NativeNewton` solver, the nonlinear solvers
+of the [SciML](https://docs.sciml.ai/NonlinearSolve/stable/) ecosystem can be
+used through the `solver` keyword argument.  This support is provided by a
+package extension that is loaded automatically when a package providing
+SciMLBase is installed, such as NonlinearSolve.jl.  PowerModels itself does
+not depend on these packages.
+
+```julia
+using PowerModels, NonlinearSolve
+
+compute_ac_pf(data, solver = NewtonRaphson())
+compute_ac_pf(data, solver = TrustRegion())
+```
+
+The solver receives the analytic sparse Jacobian, so no automatic
+differentiation or sparsity detection is performed.
+
+For many repeated solves of the same network, such as a monte carlo study
+over the power injections, the extension also provides a `NonlinearProblem`
+constructor for `PowerFlowSystem`.  This makes the SciML solver cache
+interface available, which reuses the solver's internal allocations and
+reusable symbolic factorizations across solves:
+
+```julia
+prob = NonlinearProblem(build_pf_system(instantiate_pf_data(data)))
+cache = init(prob, NewtonRaphson(linsolve = KLUFactorization(check_pattern = false)))
+
+for injections in samples
+    reinit!(cache, cache.u; p = injections)   # set the operating point, warm start from the previous solution
+    sol = solve!(cache)                       # solve, reusing the cache's allocations and symbolic factorization
+    pf_sol = PowerFlowSolution(sol)           # convert to the PowerModels solution type
+end
+```
+
+The KLU factorization reuses its symbolic analysis across solves, and
+`check_pattern = false` skips its per-iteration sparsity pattern check,
+which is safe here because the Jacobian's pattern is fixed at
+`build_pf_system` time.
+
 ### Comparison with `solve_ac_pf`
 
 `compute_ac_pf` will typically provide an identical result to `solve_ac_pf`.

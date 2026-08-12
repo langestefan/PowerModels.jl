@@ -7,6 +7,9 @@ PowerModels.jl Change Log
 - Remove the `ftol`, `iterations`, `method`, `show_trace`, and `finite_differencing` keyword arguments of `compute_ac_pf`, the supported keyword arguments are `solver` and `flat_start` (breaking)
 - Add "iterations" to the `compute_ac_pf` result data
 - Add the bus type predicates `is_pq_bus`, `is_pv_bus`, `is_slack_bus`, and `is_inactive_bus`
+- Add support for SciML nonlinear solvers in `compute_ac_pf` via a package extension that is loaded when SciMLBase is present, e.g. `using NonlinearSolve; compute_ac_pf(data, solver = NewtonRaphson())`
+- Add a SciML `NonlinearProblem` constructor for `PowerFlowSystem`, which supports the SciML solver cache interface for repeated power flow solves
+- Add a `PowerFlowSolution` constructor for SciML nonlinear solutions
 
 ### v0.21.6
 - Update to JSON@1 (#986)
