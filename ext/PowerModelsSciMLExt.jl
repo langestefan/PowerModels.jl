@@ -26,16 +26,16 @@ jacobian-vector products, so solvers perform no automatic differentiation
 and no sparsity detection.
 
 Together with the SciML solver cache interface (`init`, `solve!`, `reinit!`)
-this supports many repeated solves of the same network efficiently, for
-example a monte carlo study over the power injections,
+this supports many repeated solves of the same network efficiently.
 
 ```julia
 prob = NonlinearProblem(build_pf_system(instantiate_pf_data(data)))
 cache = init(prob, NewtonRaphson(linsolve = KLUFactorization(check_pattern = false)))
 
 for injections in samples
-    reinit!(cache, cache.u; p = injections)
-    sol = solve!(cache)
+    reinit!(cache, cache.u; p = injections)   # set the operating point, warm start from the previous solution
+    sol = solve!(cache)                       # solve, reusing the cache's allocations and symbolic factorization
+    pf_sol = PowerFlowSolution(sol)           # convert to the PowerModels solution type
 end
 ```
 """
