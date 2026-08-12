@@ -30,7 +30,7 @@ Logging = "1.10"
 NonlinearSolve = "4"
 PrecompileTools = "1"
 SCS = "1, 2"
-SciMLBase = "2"
+SciMLBase = "3"
 julia = "1.10"
 
 [extras]
