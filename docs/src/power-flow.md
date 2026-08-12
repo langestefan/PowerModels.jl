@@ -127,7 +127,7 @@ factorizations across solves:
 
 ```julia
 prob = NonlinearProblem(build_pf_system(instantiate_pf_data(data)))
-cache = init(prob, NewtonRaphson())
+cache = init(prob, NewtonRaphson(linsolve = KLUFactorization(check_pattern = false)))
 
 for injections in samples
     reinit!(cache, cache.u; p = injections)
@@ -137,7 +137,10 @@ end
 
 Passing `cache.u` to `reinit!` warm starts each sample from the previous
 solution.  The `PowerFlowSolution` constructor converts the solver's SciML
-solution back into the PowerModels type.
+solution back into the PowerModels type.  The KLU factorization reuses its
+symbolic analysis across solves, and `check_pattern = false` skips its
+per-iteration sparsity pattern check, which is safe here because the
+Jacobian's pattern is fixed at `build_pf_system` time.
 
 `compute_ac_pf` will typically provide an identical result to `solve_ac_pf`.
 However, the existence of solution degeneracy around generator injection

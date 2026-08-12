@@ -31,7 +31,7 @@ example a monte carlo study over the power injections,
 
 ```julia
 prob = NonlinearProblem(build_pf_system(instantiate_pf_data(data)))
-cache = init(prob, NewtonRaphson())
+cache = init(prob, NewtonRaphson(linsolve = KLUFactorization(check_pattern = false)))
 
 for injections in samples
     reinit!(cache, cache.u; p = injections)
