@@ -184,6 +184,21 @@ The KLU factorization reuses its symbolic analysis across solves, and
 which is safe here because the Jacobian's pattern is fixed at
 `build_pf_system` time.
 
+The same pattern is available for any solver through `PowerModels._init_nl`
+and `PowerModels._solve_nl!`.  These read the start point from `sys.x0` and
+the operating point from `sys.p0`, and fall back to `_solve_nl` for a solver
+without a cache, such as `NativeNewton`:
+
+```julia
+sys = build_pf_system(instantiate_pf_data(data))
+cache = PowerModels._init_nl(sys, alg; abstol = 1e-10)
+
+for injections in samples
+    copyto!(sys.p0, injections)
+    pf_sol = PowerModels._solve_nl!(cache, sys, alg)
+end
+```
+
 ### Comparison with `solve_ac_pf`
 
 `compute_ac_pf` will typically provide an identical result to `solve_ac_pf`.

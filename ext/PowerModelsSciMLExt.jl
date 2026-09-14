@@ -87,4 +87,29 @@ function PowerModels._solve_nl(sys::PowerModels.PowerFlowSystem, alg::SciMLBase.
     return PowerModels.PowerFlowSolution(sol)
 end
 
+
+"""
+    _init_nl(sys::PowerFlowSystem, alg::SciMLBase.AbstractNonlinearAlgorithm; abstol=1e-8, maxiters=50, kwargs...)
+
+Builds the `NonlinearProblem` and its SciML solver cache once, fixing the solver
+options for every later `_solve_nl!` call.
+"""
+function PowerModels._init_nl(sys::PowerModels.PowerFlowSystem, alg::SciMLBase.AbstractNonlinearAlgorithm; abstol=1e-8, maxiters=50, kwargs...)
+    prob = SciMLBase.NonlinearProblem(sys)
+    return SciMLBase.init(prob, alg; abstol=abstol, maxiters=maxiters, kwargs...)
+end
+
+
+"""
+    _solve_nl!(cache, sys::PowerFlowSystem, alg::SciMLBase.AbstractNonlinearAlgorithm; kwargs...)
+
+Solves from `sys.x0` at the operating point `sys.p0`, reusing the cache's
+allocations and symbolic factorization.  The solver options were fixed by
+`_init_nl`, so keywords are ignored.
+"""
+function PowerModels._solve_nl!(cache, sys::PowerModels.PowerFlowSystem, alg::SciMLBase.AbstractNonlinearAlgorithm; kwargs...)
+    SciMLBase.reinit!(cache, sys.x0; p=sys.p0)
+    return PowerModels.PowerFlowSolution(SciMLBase.solve!(cache))
+end
+
 end

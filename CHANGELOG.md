@@ -10,6 +10,7 @@ PowerModels.jl Change Log
 - Add support for SciML nonlinear solvers in `compute_ac_pf` via a package extension that is loaded when SciMLBase is present, e.g. `using NonlinearSolve; compute_ac_pf(data, solver = NewtonRaphson())`
 - Add a SciML `NonlinearProblem` constructor for `PowerFlowSystem`, which supports the SciML solver cache interface for repeated power flow solves
 - Add a `PowerFlowSolution` constructor for SciML nonlinear solutions
+- Add `_init_nl` and `_solve_nl!` for repeated power flow solves that reuse a solver cache, implemented for SciML solvers and falling back to `_solve_nl` otherwise
 
 ### v0.21.6
 - Update to JSON@1 (#986)

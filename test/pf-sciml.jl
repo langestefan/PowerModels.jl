@@ -104,6 +104,37 @@
         @test pf_sol.iterations == restored.stats.nsteps
         @test pf_sol.residual_norm <= 1e-8
     end
+    @testset "5-bus case, cached solver interface" begin
+        data = PowerModels.parse_file("../test/data/matpower/case5.m")
+        pf_data = PowerModels.instantiate_pf_data(data)
+        sys = build_pf_system(pf_data)
+        alg = NonlinearSolve.NewtonRaphson()
+
+        cache = PowerModels._init_nl(sys, alg, abstol=1e-10)
+        @test cache !== nothing
+
+        base = PowerModels._solve_nl!(cache, sys, alg)
+        @test base.converged
+        @test base.iterations > 0
+        @test base.residual_norm <= 1e-10
+        @test isapprox(base.x, PowerModels._solve_nl(sys, alg).x; atol=1e-7)
+        x_base = copy(base.x)
+
+        # a new operating point written into sys.p0 reaches the cache
+        p_base = copy(sys.p0)
+        sys.p0 .*= 1.05
+        perturbed = PowerModels._solve_nl!(cache, sys, alg)
+        @test perturbed.converged
+        @test !isapprox(perturbed.x, x_base; atol=1e-6)
+
+        copyto!(sys.p0, p_base)
+        restored = PowerModels._solve_nl!(cache, sys, alg)
+        @test restored.converged
+        @test isapprox(restored.x, x_base; atol=1e-6)
+
+        # a mistyped solver option is rejected when the cache is built
+        @test_throws NonlinearSolve.SciMLBase.CommonKwargError PowerModels._init_nl(sys, alg, abstl=1e-10)
+    end
     @testset "5-bus case, iteration limit" begin
         data = PowerModels.parse_file("../test/data/matpower/case5.m")
         pf_data = PowerModels.instantiate_pf_data(data)

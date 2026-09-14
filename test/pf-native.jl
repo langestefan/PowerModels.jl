@@ -517,6 +517,21 @@ end
         @test sol.residual_norm <= 1e-8
         @test length(sol.x) == 2*length(data["bus"])
     end
+    @testset "5-bus case, cached solver interface without a cache" begin
+        data = PowerModels.parse_file("../test/data/matpower/case5.m")
+        pf_data = PowerModels.instantiate_pf_data(data)
+        sys = build_pf_system(pf_data)
+
+        cache = PowerModels._init_nl(sys, NativeNewton())
+        @test cache === nothing
+
+        sol = PowerModels._solve_nl!(cache, sys, NativeNewton())
+        @test sol.converged
+        @test sol.x == PowerModels._solve_nl(sys, NativeNewton()).x
+
+        # NativeNewton is configured through its constructor
+        @test_throws ErrorException PowerModels._init_nl(sys, NativeNewton(), abstol=1e-10)
+    end
     @testset "solver interface, singular jacobian" begin
         # linear system with a singular jacobian
         f!(F, x, p) = (F[1]=x[1] + x[2]; F[2]=x[1] + x[2] - 1.0)

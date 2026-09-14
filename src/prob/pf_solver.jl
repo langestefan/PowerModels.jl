@@ -73,6 +73,44 @@ function _solve_nl(sys::PowerFlowSystem, alg; kwargs...)
 end
 
 
+"
+    _init_nl(sys::PowerFlowSystem, alg; kwargs...)
+
+Builds a solver cache for repeated solves of `sys` with `alg`, to be passed to `_solve_nl!`.
+Returns `nothing` for an algorithm without a cache.
+"
+function _init_nl(sys::PowerFlowSystem, alg; kwargs...)
+    return nothing
+end
+
+
+"
+    _init_nl(sys::PowerFlowSystem, alg::NativeNewton; kwargs...)
+
+`NativeNewton` keeps no cache and is configured through its constructor, so any
+keyword is rejected.
+"
+function _init_nl(sys::PowerFlowSystem, alg::NativeNewton; kwargs...)
+    if !isempty(kwargs)
+        @_error("NativeNewton takes no solver keywords, got $(keys(kwargs)), set them in its constructor as NativeNewton(; abstol, maxiters) instead")
+    end
+    return nothing
+end
+
+
+"
+    _solve_nl!(cache, sys::PowerFlowSystem, alg; kwargs...)
+
+Solves `sys` from `sys.x0` at the operating point `sys.p0` with the `cache` built by
+`_init_nl`. A solver with a cache adds a method for its algorithm type that reuses it.
+
+This default ignores `cache` and calls `_solve_nl`.
+"
+function _solve_nl!(cache, sys::PowerFlowSystem, alg; kwargs...)
+    return _solve_nl(sys, alg; kwargs...)
+end
+
+
 function _solve_nl(sys::PowerFlowSystem, alg::NativeNewton)
     x = copy(sys.x0)
     p = sys.p0
