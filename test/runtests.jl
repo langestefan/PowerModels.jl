@@ -9,6 +9,7 @@ import JuMP
 import Juniper
 import LinearAlgebra
 import Logging
+import NonlinearSolve
 import SCS
 import SparseArrays
 
@@ -96,6 +97,8 @@ include("common.jl")
     include("pf.jl")
 
     include("pf-native.jl")
+
+    include("pf-sciml.jl")
 
     include("opf.jl")
 
